@@ -1,0 +1,6 @@
+Fold,Accuracy,n_estimators,learning_rate,max_depth,use_label_encoder,eval_metric
+1,0.74375,50,0.11666896408356275,2,False,mlogloss
+2,0.7375,50,0.11666896408356275,2,False,mlogloss
+3,0.775,50,0.11666896408356275,2,False,mlogloss
+4,0.8125,50,0.11666896408356275,2,False,mlogloss
+5,0.69375,50,0.11666896408356275,2,False,mlogloss

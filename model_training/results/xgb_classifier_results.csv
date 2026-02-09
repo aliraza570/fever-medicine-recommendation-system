@@ -1,0 +1,2 @@
+Model,CrossVal_Scores,Mean_Accuracy,n_estimators,learning_rate,max_depth,eval_metric
+XGBClassifier,"[0.74375, 0.7375, 0.775, 0.8125, 0.69375]",0.7525000000000001,50,0.11666896408356275,2,mlogloss
