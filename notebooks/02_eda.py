@@ -14,8 +14,14 @@ from sklearn.preprocessing import StandardScaler, MinMaxScaler
 # Step 0: Load Cleaned Dataset
 # -----------------------------
 df = pd.read_csv("data/processed/cleaned_medicine_data.csv")
-print(f"✅ Loaded dataset with shape: {df.shape}\n")
+print("Loaded dataset with shape:", df.shape)
 print(df.head())
+
+# -----------------------------
+# Graph save path for report
+# -----------------------------
+report_fig_dir = os.path.join("reports", "figures")
+os.makedirs(report_fig_dir, exist_ok=True)
 
 # -----------------------------
 # Step 1: Select Numeric Columns
@@ -30,28 +36,36 @@ print("\nShapiro–Wilk Normality Test (Before Normalization):")
 for col in numeric_cols:
     stat, p_value = shapiro(df[col])
     result = "NORMAL" if p_value > 0.05 else "NOT NORMAL"
-    print(f"{col}: p-value = {p_value:.5f} → {result}")
+    print(f"{col}: p-value = {p_value:.5f} -> {result}")
 
-# -----------------------------
-# Step 3: Histograms with KDE for Numeric Features
-# -----------------------------
-for col in numeric_cols:
-    plt.figure(figsize=(8, 4))
-    sns.histplot(df[col], kde=True, color='blue', bins=30)
-    plt.title(f"Normality Check: {col}", fontsize=14, fontweight='bold')
-    plt.xlabel(col)
-    plt.ylabel("Frequency")
-    plt.tight_layout()
-    plt.show()
+# ==========================================================
+# Step 3: ALL FEATURES IN ONE IMAGE (VIOLIN + BOX) BEFORE NORMALIZATION
+# ==========================================================
+rows = len(numeric_cols)
+cols = 2
+plt.figure(figsize=(14, rows*2), dpi=300)
+
+for i, col in enumerate(numeric_cols):
+    plt.subplot(rows, cols, i+1)
+
+    sns.violinplot(y=df[col], color="blue", inner=None)
+    sns.boxplot(y=df[col], width=0.25, color="blue")
+
+    plt.title(f"{col}", fontsize=10, fontweight="bold")
+    plt.xlabel("")
+    plt.ylabel("")
+
+plt.suptitle("All Features Distribution Before Normalization", fontsize=16, fontweight="bold")
+plt.tight_layout(rect=[0,0,1,0.97])
+
+save_path = os.path.join(report_fig_dir, "all_features_distribution_before_norm.png")
+plt.savefig(save_path, dpi=300)
+plt.show()
 
 # -----------------------------
 # Step 4: Normalization
 # -----------------------------
-# Option 1: Standardization (mean=0, std=1)
 scaler = StandardScaler()
-# Option 2: Min-Max Scaling (0-1)
-# scaler = MinMaxScaler()
-
 df_scaled = df.copy()
 df_scaled[numeric_cols] = scaler.fit_transform(df[numeric_cols])
 
@@ -62,14 +76,37 @@ print("\nShapiro–Wilk Normality Test (After Normalization):")
 for col in numeric_cols:
     stat, p_value = shapiro(df_scaled[col])
     result = "NORMAL" if p_value > 0.05 else "NOT NORMAL"
-    print(f"{col}: p-value = {p_value:.5f} → {result}")
+    print(f"{col}: p-value = {p_value:.5f} -> {result}")
+
+# ==========================================================
+# Step 6: ALL FEATURES IN ONE IMAGE AFTER NORMALIZATION
+# ==========================================================
+rows = len(numeric_cols)
+cols = 2
+plt.figure(figsize=(14, rows*2), dpi=300)
+
+for i, col in enumerate(numeric_cols):
+    plt.subplot(rows, cols, i+1)
+
+    sns.violinplot(y=df_scaled[col], color="blue", inner=None)
+    sns.boxplot(y=df_scaled[col], width=0.25, color="blue")
+
+    plt.title(f"{col}", fontsize=10, fontweight="bold")
+    plt.xlabel("")
+    plt.ylabel("")
+
+plt.suptitle("All Features Distribution After Normalization", fontsize=16, fontweight="bold")
+plt.tight_layout(rect=[0,0,1,0.97])
+
+save_path = os.path.join(report_fig_dir, "all_features_distribution_after_norm.png")
+plt.savefig(save_path, dpi=300)
+plt.show()
 
 # -----------------------------
-# Step 6: Spearman Correlation and P-values
+# Step 7: Spearman Correlation and P-values
 # -----------------------------
 corr_matrix = df_scaled[numeric_cols].corr(method='spearman')
 
-# P-value matrix
 pval_matrix = pd.DataFrame(index=numeric_cols, columns=numeric_cols)
 for col1 in numeric_cols:
     for col2 in numeric_cols:
@@ -81,36 +118,41 @@ print("\nSpearman Correlation Matrix:\n", corr_matrix.round(3))
 print("\nP-value Matrix:\n", pval_matrix.round(5))
 
 # -----------------------------
-# Step 7: Heatmap Visualization
+# Step 8: Heatmap Visualization
 # -----------------------------
-plt.figure(figsize=(12, 10))
+plt.figure(figsize=(12, 10), dpi=300)
 sns.heatmap(
     corr_matrix, 
-    annot=True,        # Show correlation coefficients
+    annot=True,
     fmt=".2f", 
-    cmap="Blues",      # Professional blue palette
+    cmap="Blues",
     square=True, 
     linewidths=0.5, 
     cbar_kws={'shrink': 0.8, 'label': 'Spearman r'}
 )
-plt.title("Spearman Correlation Heatmap (Non-Parametric)", fontsize=16, fontweight='bold')
+plt.title(
+    "Spearman Correlation Heatmap\nUsed to detect strong positive & negative relationships",
+    fontsize=16,
+    fontweight='bold'
+)
 plt.tight_layout()
+
+heatmap_path = os.path.join(report_fig_dir, "spearman_heatmap.png")
+plt.savefig(heatmap_path, dpi=300)
 plt.show()
 
 # -----------------------------
-# Step 8: Save CSV Files (Full Dataset + Correlation Matrix)
+# Step 9: Save CSV Files
 # -----------------------------
 save_dir = "data/processed"
 os.makedirs(save_dir, exist_ok=True)
 
-# 1️⃣ Save full normalized dataset (1000 rows × 20 columns)
 normalized_file = os.path.join(save_dir, "cleaned_normalized_data.csv")
 df_scaled.to_csv(normalized_file, index=False)
-print(f"✅ Full normalized dataset saved at: {normalized_file}")
-print(f"Shape: {df_scaled.shape}")  # Should show (1000, 20)
+print("Full normalized dataset saved at:", normalized_file)
+print("Shape:", df_scaled.shape)
 
-# 2️⃣ Save Spearman correlation matrix 
 corr_file = os.path.join(save_dir, "spearman_correlation.csv")
 corr_matrix.to_csv(corr_file, index=True)
-print(f"✅ Spearman correlation matrix saved at: {corr_file}")
-print(f"Correlation matrix shape: {corr_matrix.shape}")  
+print("Spearman correlation matrix saved at:", corr_file)
+print("Correlation matrix shape:", corr_matrix.shape)
